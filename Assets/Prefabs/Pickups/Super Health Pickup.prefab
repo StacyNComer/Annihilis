@@ -1,0 +1,119 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &1779992453643790849
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2166776851640536553, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2166776851640536553, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2166776851640536553, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2972735004350367388, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: m_RootOrder
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2972735004350367388, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2972735004350367388, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2972735004350367388, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2972735004350367388, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2972735004350367388, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2972735004350367388, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2972735004350367388, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2972735004350367388, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2972735004350367388, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2972735004350367388, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3339027345887970604, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: ShapeModule.type
+      value: 17
+      objectReference: {fileID: 0}
+    - target: {fileID: 3339027345887970604, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: VelocityModule.enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3339027345887970604, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: ShapeModule.radiusThickness
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3339027345887970604, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: VelocityModule.orbitalX.scalar
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3339027345887970604, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: VelocityModule.orbitalY.scalar
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3339027345887970604, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: VelocityModule.orbitalZ.scalar
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3339027345887970604, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: InitialModule.startColor.maxColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3339027345887970604, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: InitialModule.startColor.maxColor.g
+      value: 0.078098044
+      objectReference: {fileID: 0}
+    - target: {fileID: 3339027345887970604, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: InitialModule.startColor.maxColor.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5342552034454175541, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: overheal
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5342552034454175541, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: amountHealed
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 5721835880474002187, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 9d291cb0e92d14e44b9086b3b3d49d36, type: 2}
+    - target: {fileID: 5723874811933569670, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}
+      propertyPath: m_Name
+      value: Super Health Pickup
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: b0de76f9670bfeb488f2fdf3818feeca, type: 3}

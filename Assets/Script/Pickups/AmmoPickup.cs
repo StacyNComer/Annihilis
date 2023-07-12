@@ -1,7 +1,8 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Gives the player ammo when collided with.
+/// </summary>
 public class AmmoPickup : PickupBase
 {
     [SerializeField]
@@ -9,11 +10,9 @@ public class AmmoPickup : PickupBase
     [SerializeField]
     private int amount;
 
-    /// <summary>
-    /// Prevent the pickup from being collected if the user already has max ammo. 
-    /// </summary>
     protected override bool PickupCondition(PlayerController collector)
     {
+        //Prevent the pickup from being collected if the user already has max ammo. 
         return !collector.AmmoMaxed(ammo);
     }
 

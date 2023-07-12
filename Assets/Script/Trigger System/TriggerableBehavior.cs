@@ -3,29 +3,35 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
-
+/// <summary>
+/// The base class for GameObjects that can be affected in some form by a trigger.
+/// </summary>
 public class TriggerableBehavior : MonoBehaviour
 {
+    /// <summary>
+    /// A dictionary made to contain the trigger groups in play. Each list should contain every triggerableBehavior with a triggerGroup matching its key.
+    /// </summary>
     private readonly static Dictionary<string, List<TriggerableBehavior>> triggerGroups = new Dictionary<string, List<TriggerableBehavior>>();
 
     [SerializeField]
     protected UnityEvent onTriggered;
     /// <summary>
-    /// If present, allows this and any other Triggerable of the same name to be triggered at once.
+    /// Allows this and any other game object in the same trigger group to be triggered all at once.
     /// </summary>
     [SerializeField]
     private string triggerGroupName;
 
 #if UNITY_EDITOR
-    [SerializeField]
+    [SerializeField, Tooltip("[EDITOR ONLY] Causes a debug message to be logged when this script is triggered.")]
     private string debugMessage;
 #endif
 
-    // Start is called before the first frame update
     void Awake()
     {
+        //If the triggerable is a part of a trigger group, register it in the static triggerGroups dictionary.
         if(triggerGroupName != "")
         {
+            //If this is the first triggerable in its trigger group, initialize its relevant list in the triggerGroups dictionary.
             if (!triggerGroups.ContainsKey(triggerGroupName))
             {
                 triggerGroups[triggerGroupName] = new List<TriggerableBehavior>();

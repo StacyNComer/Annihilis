@@ -569,6 +569,7 @@ MonoBehaviour:
   damageAudio: {fileID: 8300000, guid: b92222822af3d0240a7f06a43176d29c, type: 3}
   weakpointAudio: {fileID: 8300000, guid: 4277b05bbbfd4af47bbf5cbd0791c8bb, type: 3}
   deathAudio: {fileID: 8300000, guid: f01c623f724825e44a923d1ae50256f2, type: 3}
+  annihilatedAudio: {fileID: 8300000, guid: 2197b7071791ba54b8c5bf606a1dfe6a, type: 3}
   deathEffect: {fileID: 607313152651088098, guid: d8970787eb3fab9458876822492ccfff, type: 3}
 --- !u!95 &2499212750510309907
 Animator:

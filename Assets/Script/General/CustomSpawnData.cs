@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -7,9 +5,13 @@ using UnityEngine;
 /// </summary>
 public class CustomSpawnData : MonoBehaviour
 {
-    [SerializeField]
+    [SerializeField, Tooltip("The color the spawning particles will be for this GameObject.")]
     private Color spawnColor;
     
+    /// <summary>
+    /// Returns the color that the spawning particles for this GameObject should have.
+    /// </summary>
+    /// <returns></returns>
     public Color GetSpawnColor()
     {
         return spawnColor;

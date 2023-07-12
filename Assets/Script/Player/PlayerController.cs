@@ -26,6 +26,9 @@ public class PlayerController : MonoBehaviour
 
         private int maxAmmo;
 
+        /// <summary>
+        /// UI meant to display an ammo type's current amount.
+        /// </summary>
         private TMPro.TMP_Text[] ammoCounters;
 
         public AmmoData(int max, TMPro.TMP_Text[] ammoCountTexts = null, int current = 0)
@@ -37,6 +40,9 @@ public class PlayerController : MonoBehaviour
             UpdateAmmoCounters();
         }
 
+        /// <summary>
+        /// Update's every ammo counter to display the currunt ammo.
+        /// </summary>
         private void UpdateAmmoCounters()
         {
             if(ammoCounters != null)
@@ -49,7 +55,7 @@ public class PlayerController : MonoBehaviour
         }
 
         /// <summary>
-        /// Modifies the current ammo value by the give amount. Current ammo is always clamped between 0 and max ammo.
+        /// Modifies the current ammo value by the given amount an updates relavant UI. Current ammo is always clamped between 0 and max ammo.
         /// </summary>
         /// <param name="amount"></param>
         public void ModifyAmmo(int amount)
@@ -70,17 +76,29 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// The maximum slope that counts and being the "ground".
+    /// </summary>
     public const float MaxWalkableAngle = 45;
     
-    private const float AirControl = .425f;
+    /// <summary>
+    /// A coefficient for the player's acceleration used while they are in the air.
+    /// </summary>
+    private const float AirControlCoef = .425f;
+    /// <summary>
+    /// The time before the player loses their jump when dashing upwards off the ground. This grace period allows the player to perform a "Lunar Hop" which causes them to jump super high.
+    /// </summary>
+    private const float LunarHopGracePeriod = .1f;
 
+    /// <summary>
+    /// The maximum speed a player who is neither dashing nor affected by bonus movement speed may have. Calculate from the player's max speed at the beginning of runtime.
+    /// </summary>
     private static float playerBaseMaxSpeed;
     #endregion
 
     #region Editor Parameters
-    //Stats
     [Header("Character Movement")]
-    [SerializeField]
+    [SerializeField, Tooltip("How much the player accelerates each seconds")]
     private float movSpeed = 1;
     [SerializeField]
     private float maxSpeed = 11;
@@ -95,7 +113,7 @@ public class PlayerController : MonoBehaviour
     private float dashTime = 0.25f;
     [SerializeField]
     private float dashCooldown = 1;
-    [SerializeField]
+    [SerializeField, Tooltip("The player's speed while in \"No-Clip\" mode.")]
     private float flightSpeed = 16;
 
     [Header("Component References")]
@@ -154,7 +172,7 @@ public class PlayerController : MonoBehaviour
     /// <summary>
     /// Played when the player maintains a higher than max speed with a jump.
     /// </summary>
-    [SerializeField]
+    [SerializeField, Tooltip("Played when the player maintains a higher than max speed with a jump.")]
     private AudioClip bHopAudio;
     [SerializeField]
     private AudioClip damageAudio;
@@ -177,11 +195,13 @@ public class PlayerController : MonoBehaviour
     #endregion
 
     #region Private Fields
-    //Components
+        //Components
     private Rigidbody rb;
 
     private Dictionary<AmmoType, AmmoData> ammo;
-    //Set from the player's physics material on Awake.
+    /// <summary>
+    /// The friction of the players footCollider while they are on the ground. Set from the player's physics material on Awake.
+    /// </summary>
     private float baseDynamicFriction;
     private Transform cameraTransform;
     private WeaponBehavior currentWeapon;
@@ -193,7 +213,7 @@ public class PlayerController : MonoBehaviour
     /// <summary>
     /// Tracks the seconds before the player can swap their weapon using axis controls again.
     /// </summary>
-    private float axisSwapTracker;
+    private float axisSwapCooldownTracker;
     /// <summary>
     /// The velocity the player is set to have when they dash. The upward velocity is capped at jumpVelocity.
     /// </summary>
@@ -216,28 +236,49 @@ public class PlayerController : MonoBehaviour
     //The amount of times the player can jump. Resets when the player touches anything with the "Ground" tag.
     private int jumps = 1;
     /// <summary>
-    /// The collider for the player's lunge attack. Is null if the player either isn't dashing/diving or already hit an enemy with the lunge.
+    /// The collider for the player's dash attack. Is null if the player either isn't dashing/diving or already hit an enemy with the lunge.
     /// </summary>
     private PlayerLunge lungeAttack;
+    /// <summary>
+    /// If true, the player flies and does not collide with anything. Dashing while this is true instead cycles the flight speed.
+    /// </summary>
     private bool noClip;
     private bool onGround = true;
+    /// <summary>
+    /// While greater than 0, the player is staggered and cannot move without lunging.
+    /// </summary>
     private float staggerTracker = 0;
 
+    /// <summary>
+    /// Stores the player's weapon inventory.
+    /// </summary>
     private WeaponBehavior[] weapons = new WeaponBehavior[8];
 
+    /// <summary>
+    /// The normal of the ground the player is standing on. It is 0 while the player is in the air.
+    /// </summary>
     private Vector3 slopeNormal;
+    /// <summary>
+    /// A vector representing the direction of the ground's horizontal axis relative to the direction of its normal.
+    /// </summary>
     private Vector3 slopeAxleAxis;
     #endregion
 
     #region Unity Events
     private void Awake()
     {
+            //Static Initialization (There should only be one player!)
+        //Initialize base max speed.
         playerBaseMaxSpeed = maxSpeed;
 
+        //Component caching
         rb = GetComponent<Rigidbody>();
-
         cameraTransform = camera.transform;
+
+        footMaterial = footCollider.material;
         baseDynamicFriction = footCollider.material.dynamicFriction;
+
+        //Make sure the cursor does not leave the game window.
         Cursor.lockState = CursorLockMode.Locked;
 
         //Initialize Ammo
@@ -252,13 +293,11 @@ public class PlayerController : MonoBehaviour
         };
     }
 
-    // Start is called before the first frame update
     void Start()
     {
         gameManager = GameManager.gameManager;
 
-        footMaterial = footCollider.material;
-
+        //Add the starting weapon to the player's inventory.
         AddWeapon(startingWeapon);
         EquipWeapon(startingWeapon);
     }
@@ -266,9 +305,10 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //Stagger tracking
+        
         if(!IsPaused())
         {
+            //Stagger tracking
             if (staggerTracker > 0)
             {
                 staggerTracker -= Time.deltaTime;
@@ -279,13 +319,18 @@ public class PlayerController : MonoBehaviour
                 }
             }
 
-            //Raise the starting point of the ground test some so in case the foot collide is inside the ground.
+                //Perform a sphereCast to test if the player has walked off a ledge and is no longer on the ground.
+
+            //Raise the starting point of the ground test a little in case the foot collider is inside of the ground.
             var groundTestOffset = .2f;
-            //How far downward the ground test should be. We add the offset so that the distance is relative to the foot collider's center.
+            //How far downward the ground test should travel. We add the offset so that the distance is relative to the foot collider's center.
             var groundTestDist = .25f + groundTestOffset;
+
+            //A sphereCast starting from the position of the player's foot collider (with an offset) and travelling groundTestDist downward. The radius of this check is the same as the foot collider's radius.
             bool groundTest = Physics.SphereCast(transform.position + footCollider.center + Vector3.up * groundTestOffset, footCollider.radius, Vector3.down, out RaycastHit groundHit, groundTestDist, GameManager.GetRaycastLayerMask(), QueryTriggerInteraction.Ignore);
-            //Test if the player is still on the ground via a raycast. The player loses their jump if they are no longer on the ground. Leaving the ground via a lunge has a grace period before the jump loss so that the player can "Lunar Hop".
-            //NOTE: If the player's collision detection is set to Discrete, there is a chance this check misses the ground at high landing velocities.
+
+            //Test if the player is still on the ground via a raycast. The player loses their jump if they are no longer on the ground. Leaving the ground via a lunge has a grace period before the jump is loss so that the player can "Lunar Hop".
+            //NOTE: If the player's collision detection is set to Discrete (which it shouldn't be), there is a chance this check misses the ground at high landing velocities.
             if (!IsDashing() && (!groundTest || !IsGroundCollision(groundHit)))
             {
                 //Flatten the players velocity to the X/Z plane if they walk off a slope onto flat ground. This makes sure the player stays on the ground (retaining their momentum) instead of being flung into the air. The distance check is to make sure the player is moving onto the ground instead of the air, in which case the upward momentum is preserved to make the movement feel right.
@@ -301,15 +346,18 @@ public class PlayerController : MonoBehaviour
                 jumps = 0;
             }
 
-            //Aiming
+                //Aiming
+
             var yaw = transform.eulerAngles.y + Input.GetAxis("Mouse X") * aimSpeed;
             var pitch = cameraTransform.localEulerAngles.x + -Input.GetAxis("Mouse Y") * aimSpeed;
+            //The player's entire body yaws (so that they walk in the correct direction) while only the camera is pitched.
             transform.eulerAngles = new Vector3(0, yaw, 0);
             camera.transform.localEulerAngles = new Vector3(pitch, 0, 0);
 
             #region Controls
             if (noClip)
             {
+                //Cycle noclip flight speed
                 if (Input.GetButtonDown("Lunge"))
                 {
                     if(flightSpeedMultiplier < 4)
@@ -323,10 +371,12 @@ public class PlayerController : MonoBehaviour
                     pickupMsgManager.AddPickupMessage($"Flight Speed: x{flightSpeedMultiplier}");
                 }
 
+                //noclip flight
                 CharacterFlightMovement("Vertical", Vector3.forward, true);
                 CharacterFlightMovement("Horizontal", Vector3.right, true);
             } else
             {
+                //Walking
                 CharacterMovement("Vertical", transform.forward);
                 CharacterMovement("Horizontal", transform.right);
 
@@ -336,14 +386,14 @@ public class PlayerController : MonoBehaviour
                 {
                     dashTimeTracker -= Time.deltaTime;
 
-                    //Destroys the player's lunge collision and rests their foot friction, but only if the player is touching the geound.
+                    //Destroys the player's lunge collision and rests their foot friction. If the player is not touching the ground, their lunge is extended until the player either lands or moves, making it up to CollisionEnter or CharacterMovement to end the lunge.
                     //The second clause clears the player's jump if they leave the ground with a dash. This has a grace period so that the player can "Moon Jump" by ascending with both a jump and dash at the same time.
                     if (dashTimeTracker <= 0 && onGround)
                     {
                         SetFeetFrictionless(false);
                         ClearLunge();
                     }
-                    else if (!onGround && jumps > 0 && dashTimeTracker < dashTime - .1f)
+                    else if (!onGround && jumps > 0 && dashTimeTracker < dashTime - LunarHopGracePeriod)
                     {
                         jumps = 0;
                     }
@@ -355,6 +405,7 @@ public class PlayerController : MonoBehaviour
                     dashCooldownTracker -= Time.deltaTime;
                     dashBar.value = 1 - (dashCooldownTracker / dashCooldown);
 
+                    //Change the dash meter's color back to normal when the dash comes off of cooldown.
                     if (dashCooldownTracker <= 0)
                     {
                         //dashBarFlash.FlashImage(Color.white, new Color(.6f, .94f, 1), .25f);
@@ -362,9 +413,10 @@ public class PlayerController : MonoBehaviour
                     }
                 }
 
-                //Dashing
+                //Dashing (a.k.a lunging)
                 if (Input.GetButtonDown("Lunge") && dashCooldownTracker <= 0)
                 {
+                    //Lunging clears the player out of their stagger.
                     ClearStagger();
 
                     Vector3 dashDirection;
@@ -380,12 +432,12 @@ public class PlayerController : MonoBehaviour
                         dashDirection = transform.forward;
                     }
 
-                    //Let's the player dash along the ground without the dash velocity needing to be absurd.
+                    //Frictionless feet let the player dash along the ground with a single velocity change without the dash velocity needing to be absurd.
                     SetFeetFrictionless(true);
 
                     var dashVel = dashDirection * dashSpeed;
 
-                    //Limit the player's upward dash velocity to their jump velocity
+                    //Limit the player's upward dash velocity to their jump velocity.
                     if (dashVel.y > jumpVelocity)
                     {
                         rb.velocity = new Vector3(dashVel.x, jumpVelocity, dashVel.z);
@@ -395,7 +447,7 @@ public class PlayerController : MonoBehaviour
                         rb.velocity = dashVel;
                     }
 
-                    //If the player already has a lunge active, it is cleared
+                    //If the player already has a lunge hitbox active, it is cleared.
                     ClearLunge();
 
                     //Create and initialize the lunge collision.
@@ -404,12 +456,17 @@ public class PlayerController : MonoBehaviour
                     lungeAttack.GetComponent<PlayerAttack>().SetAttackOwner(this);
 
                     dashTimeTracker = dashTime;
+
                     dashCooldownTracker = dashCooldown;
 
-                    //UI and FX
+                        //Lunge UI and FX
+                    //Show the screen effect for the player lunging.
                     lungeImage.enabled = true;
+                    //Empty the lunge meter.
                     dashBar.value = 0;
+                    //Turn the lunge meter grey
                     dashBarFlash.SetBaseColor(Color.gray);
+                    //Play lunge audio.
                     AudioSource.PlayClipAtPoint(dashAudio, transform.position);
                 }
                 #endregion
@@ -438,6 +495,7 @@ public class PlayerController : MonoBehaviour
                     rb.AddForce(Vector3.up * jumpVelocity, ForceMode.VelocityChange);
 
                     LeaveGround();
+
                     jumps = 0;
 
                     //Turn off the friction so the player keeps some of their momentum when they land. This is turned back on when they touch the ground.
@@ -445,7 +503,7 @@ public class PlayerController : MonoBehaviour
                 }
             }
 
-            //Firing Weapons
+                //Firing Weapons
             if (Input.GetButtonDown("Fire1"))
             {
                 currentWeapon.StartFiringPrimary();
@@ -461,13 +519,15 @@ public class PlayerController : MonoBehaviour
                 currentWeapon.FireSecondary();
             }
 
-            //Weapon Swapping
+                //Weapon Swapping
             var weaponScroll = Input.GetAxis("Mouse ScrollWheel");
 
-            if (axisSwapTracker <= 0 && weaponScroll != 0)
+            //The axis weapon swapping has a cooldown so the the player cannot "double swap" by accident.
+            if (axisSwapCooldownTracker <= 0 && weaponScroll != 0)
             {
-                axisSwapTracker = axisSwapCooldown;
+                axisSwapCooldownTracker = axisSwapCooldown;
 
+                //Swap to the previous/next weapon based on the axis value.
                 if (weaponScroll > 0)
                 {
                     SwapWeapon();
@@ -478,13 +538,13 @@ public class PlayerController : MonoBehaviour
                 }
             } else
             {
-                axisSwapTracker -= Time.deltaTime;
+                axisSwapCooldownTracker -= Time.deltaTime;
             }
         
         }
         #endregion
 
-        #region Version -1 Test Controls
+        #region Cheat Controls
 /*        if (Input.GetKeyDown(KeyCode.Alpha1))
             TriggerableBehavior.TriggerGroup("Wave1");
 
@@ -510,43 +570,51 @@ public class PlayerController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.L))
             infiniteAmmo = !infiniteAmmo;
 
+        //Turn on NIGHTMARE MODE (setting the enemy multiplier to 2).
         if (Input.GetKeyDown(KeyCode.Minus))
         {
             GameManager.enemyMultiplier = 2;
             nightmareMessage.Trigger();
         }
 
-        //NoClip
+        //Noclip
         if (Input.GetKeyDown(KeyCode.BackQuote))
         {
             SetNoClip(!noClip);
         }
 
+        //Disable HUD
         if (Input.GetKeyDown(KeyCode.H))
             uiRoot.SetActive(!uiRoot.activeSelf);
 
-        //Deleto
+        //Deleto (kills all enemies)
         if (Input.GetKey(KeyCode.Backspace))
         {
             foreach (Destructable enemy in FindObjectsByType<Destructable>(FindObjectsSortMode.None))
                 enemy.Die();
         }
 
+        //Restart the level
         if(Input.GetKeyDown(KeyCode.R) && testMenu.activeSelf)
         {
+            //Make sure the game is unpaused!
             Time.timeScale = 1;
+
             SceneManager.LoadScene(0);
         }
 
+        //Quit ze game
         if (Input.GetKeyDown(KeyCode.Escape) && testMenu.activeSelf)
         {
             Application.Quit();
         }
 
-        //Test Menu
+        //Toggle test menu Menu
         if (Input.GetKeyDown(KeyCode.Tab))
         {
             testMenu.SetActive(!testMenu.activeSelf);
+
+            //Pause/Unpause the game when the menu is opened/closed.
             if (testMenu.activeSelf)
             {
                 Time.timeScale = 0;
@@ -561,6 +629,7 @@ public class PlayerController : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
+        //If the player collides with the ground,restore their jump, restore their foot friction, and end their lunge if it was exended due to them being in the air.
         if (IsGroundCollision(collision))
         {
             jumps = 1;
@@ -570,16 +639,19 @@ public class PlayerController : MonoBehaviour
 
             SetFeetFrictionless(false);
 
+            //End the player's lunge if it was extended by them being in the air.
             if (!IsDashing())
             {
                 ClearLunge();
             }
         }
     }
-
-
     #endregion
 
+    /// <summary>
+    /// Set the slopeNormal and slopeAxisAngle based on the provided surface normal. This tells the player how to move in response to the slope of the surface they are walking on. If this method is given a zero-vector (e.g. they are in the air), the values will still function properly.
+    /// </summary>
+    /// <param name="surfaceNormal"></param>
     private void CalculateSlopeData(Vector3 surfaceNormal)
     {
         //Set the normal of the surface the player is supposed to be walking on.
@@ -587,13 +659,13 @@ public class PlayerController : MonoBehaviour
 
         //Project the surface onto the x/z plane to get it's horizontal direction.
         var horDir = Vector3.ProjectOnPlane(surfaceNormal, Vector3.up).normalized;
-        //Swapping the x and z values rotates the vector 90 degrees about the y axis so that it is along the slope's width instead of its length.
+        //Swapping the x and z values rotates the vector 90 degrees about the y axis so that it faces the side instead of forward.
         slopeAxleAxis = new Vector3(-horDir.z, 0, horDir.x);
     }
 
     #region Static Methods
     /// <summary>
-    /// Returns the maximum speed that player can move at, without taking into account lunging or having increased movement speed. Automatically set on Awake.
+    /// Returns the maximum speed that player can move at, without taking into account lunging or having bonus movement speed. Automatically set on Awake.
     /// </summary>
     public static float GetPlayeraseMaxSpeed()
     {
@@ -603,12 +675,13 @@ public class PlayerController : MonoBehaviour
 
     #region Private Methods
     /// <summary>
-    /// Applies a force that moves the player in a given direction while clamping the player's speed at their Max Speed. This function does nothing while the player is dashingor staggered.
+    /// Applies a force that moves the player in a given direction while clamping the player's speed at their Max Speed. This function does nothing while the player is dashing or staggered.
     /// </summary>
     /// <param name="direction">The direction to move in. This is NOT relative to the player transform.</param>
     private void CharacterMovement(string axisName, Vector3 direction)
     {
         var axisInput = Input.GetAxis(axisName);
+        //Stores if the player is actually pressing the axis input, as opposed to it having a value due to smoothing.
         var axisButtonHeld = Input.GetAxisRaw(axisName) != 0;
         //If the character is on a slope, rotate the movement direction so that it is parallel with the slope.
         direction = Quaternion.AngleAxis(-Vector3.Angle(Vector3.up, slopeNormal), slopeAxleAxis) * direction;
@@ -616,19 +689,18 @@ public class PlayerController : MonoBehaviour
         if (axisInput != 0 && !IsDashing() && staggerTracker <= 0)
         {
             //Reduce the acceleration if the player is in the air (makes the controls a tad less slippery).
-            var airControlScalar = (onGround ? 1 : AirControl);
+            var airControlScalar = onGround ? 1 : AirControlCoef;
 
             var finalVelocity = rb.velocity + airControlScalar * movSpeed * axisInput * Time.deltaTime * direction;
             var finalHorVelocity = Vector3.ProjectOnPlane(finalVelocity, Vector3.up);
 
+            //If the player is moving faster than their max speed, clamp their horizontal velocity to the maxSpeed.
             if (finalHorVelocity.magnitude > maxSpeed)
             {
-               if(axisButtonHeld)
+               //The player's velocity should only be clamped if they are actually inputing a movement! The second check keeps the player from jerking when going up ramps.
+               if(axisButtonHeld && OnFlatGround())
                {
-                    if (OnFlatGround())
-                    {
-                        rb.velocity = Vector3.ClampMagnitude(finalHorVelocity, maxSpeed) + new Vector3(0, finalVelocity.y, 0);
-                    }
+                    rb.velocity = Vector3.ClampMagnitude(finalHorVelocity, maxSpeed) + new Vector3(0, finalVelocity.y, 0);
                }
             }
             else
@@ -636,7 +708,7 @@ public class PlayerController : MonoBehaviour
                 rb.velocity = finalVelocity;
             }
 
-            //Clear the lunge if the player moves while in the air. Axis Raw is used to that the player is only knocked out of their dash while they are pressing a movement key and can't be knocked out of their lunge by the axis value lingering.
+            //Clear the lunge if the player moves while in the air. Axis Raw is used to that the player is only knocked out of their dash while they are pressing a movement key and can't be knocked out of their lunge by the axis value lingering due to smoothing.
             if (!onGround && axisButtonHeld)
             {
                 ClearLunge();
@@ -644,6 +716,9 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Translates the players position according to the given axis input, with a maximum speed of flightSpeed units/s.
+    /// </summary>
     private void CharacterFlightMovement(string axisName, Vector3 direction, bool relative)
     {
         if (relative)
@@ -652,7 +727,7 @@ public class PlayerController : MonoBehaviour
         }
         
         var motion = Input.GetAxis(axisName) * flightSpeed * flightSpeedMultiplier * Time.deltaTime * direction;
-
+        
         transform.Translate(motion, Space.World);
     }
 
@@ -671,6 +746,9 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Instantly ends the player being staggered.
+    /// </summary>
     private void ClearStagger()
     {
         if (onGround && !IsDashing())
@@ -712,7 +790,6 @@ public class PlayerController : MonoBehaviour
 
     /// <summary>
     /// Sets on ground to false and resets the vectors used to help the player move up/down slopes. Note that this does not automatically make the player lose their jump.
-    /// 
     /// </summary>
     private void LeaveGround()
     {
@@ -723,6 +800,10 @@ public class PlayerController : MonoBehaviour
         slopeAxleAxis = Vector3.zero;
     }
 
+    /// <summary>
+    /// True if the normal of the surface the player is standing on is straight upwards.
+    /// </summary>
+    /// <returns></returns>
     private bool OnFlatGround()
     {
         return slopeNormal == Vector3.up;
@@ -742,30 +823,46 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="noClipEnabled"></param>
     private void SetNoClip(bool noClipEnabled)
     {
         noClip = noClipEnabled;
 
+        //Disable/re-enable gravity (so the player does not fall into an infinite void when they turn on noclip)
         rb.useGravity = !noClip;
+
+        //Noclip flight does not use physics to move, so velocity must be zeroed.
         rb.velocity = Vector3.zero;
 
+        //Disablr/Re-enable collision
         foreach(Collider col in gameObject.GetComponents<Collider>())
         {
             col.enabled = !noClip;
         }
     }
 
+    /// <summary>
+    /// Switches the equipped weapon to the next/previous weapon in the player's inventory.
+    /// </summary>
+    /// <param name="prevWeapon">If true, this method will swap to the previous weapon instead of the next one.</param>
     private void SwapWeapon(bool prevWeapon = false)
     {
         WeaponBehavior toSelect;
+
+        //The weapon swap starts from the player's current weapon.
         var i = currentWeapon.GetWeaponSlot();
 
-        //Loop through the players weapons until a non-empty slot is found or the current slot is returned to. The latter case prevents an infinite loop.
+        //Loop through the players weapons until a non-empty slot is found or the current slot is returned to. The latter case prevents an infinite loop if the player only has one weapon.
         do
         {
             if(prevWeapon)
             {
                 i--;
+
+                //Wrap i's value if the beginning of the player's weapon inventory was reached.
                 if (i < 0)
                 {
                     i = weapons.Length - 1;
@@ -773,6 +870,8 @@ public class PlayerController : MonoBehaviour
             } else
             {
                 i++;
+
+                //Wrap i's value if the end of the player's weapon inventory was reached.
                 if (i == weapons.Length)
                 {
                     i = 0;
@@ -832,6 +931,11 @@ public class PlayerController : MonoBehaviour
         weapons[weapon.GetWeaponSlot()] = weapon;
     }
 
+    /// <summary>
+    /// Returns true if the given ammo type is storing its maximum amount of ammo.
+    /// </summary>
+    /// <param name="ammoType"></param>
+    /// <returns></returns>
     public bool AmmoMaxed(AmmoType ammoType)
     {
         var ammoData = ammo[ammoType];
@@ -845,6 +949,7 @@ public class PlayerController : MonoBehaviour
     {
         DamagePlayer(attackData.GetDamage());
 
+        //If attack has a staggerTime, stagger the player. Being damages with and without stagger has different audio.
         if (attackData.GetStaggerTime() > 0)
         {
             AudioSource.PlayClipAtPoint(staggerDamageAudio, transform.position, .4f);
@@ -872,6 +977,7 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     public void DamagePlayer(int amount)
     {
+        //Show a death message if the attack "killed" the player.
         if (hitpoints > 0 && hitpoints - amount <= 0)
         {
             dieMessage.Trigger();
@@ -955,7 +1061,7 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// Returns the players velocity with the magnitude clamped down their base speed. Useful if you want something to track the player, but only if they are not lunging or otherwise moving fast than their base speed.
+    /// Returns the players velocity with the magnitude clamped down their base speed. Useful if you want something to track the player, but only if they are not lunging and lack any bonus movement speed.
     /// </summary>
     /// <returns></returns>
     public Vector3 GetClampedVelocity()
@@ -969,18 +1075,25 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// Return's the player's current velocity.
+    /// Returns the player's current velocity.
     /// </summary>
     public Vector3 GetVelocity()
     {
         return rb.velocity;
     }
 
+    /// <summary>
+    /// Restore the given amount of health to the player. Unless overheal is true, the healing cannot take a player's health above 100.
+    /// </summary>
+    /// <param name="overheal">Whether or not the healing can raise a player's health above 100. There is no limit to the amount of overheal a player can recieve.</param>
     public void HealPlayer(int amount, bool overheal = false)
     {
-        hitpoints += amount;
+        //If the healing cannot overheal and would take the players health above 100, simply set the player's health to 100. If the player's health is >100, non-overheal does nothing.
+        if(overheal || hitpoints + amount <= 100)
+        {
+            hitpoints += amount;
 
-        if(!overheal && hitpoints > 100)
+        } else if (hitpoints < 100)
         {
             hitpoints = 100;
         }
@@ -989,13 +1102,20 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// True if the player is dashing. Note that this does not correspond with the player's lunge collider being active due to the dive mechanic.
+    /// True if the player is lunging. Note that this does not correspond with the player's lunge collider being active due to the dive mechanic.
     /// </summary>
     public bool IsDashing()
     {
         return dashTimeTracker > 0;
     }
 
+    /// <summary>
+    /// Pushes the player away from sourcePos with the given force. The player's non-lunge movement are disabled for staggerTime seconds.
+    /// </summary>
+    /// <param name="force">The magnitude of the stagger velocity.</param>
+    /// <param name="staggerTime">Disables the character's non-lunge movment for this amount of seconds.</param>
+    /// <param name="sourcePos">The point in space the player is staggered away from.</param>
+    /// <param name="clampYVel">If true, the y velocity is clamped to the player's jump velocity.</param>
     public void StaggerPlayer(float force, float staggerTime, Vector3 sourcePos, bool clampYVel = true)
     {
         staggerTracker = staggerTime;
@@ -1012,6 +1132,9 @@ public class PlayerController : MonoBehaviour
         rb.velocity = staggerVel;
     }
 
+    /// <summary>
+    /// Displays the given message at the top of the screen.
+    /// </summary>
     public void ShowTutorialMessage(string line1, string line2)
     {
         tutorialFadingBackground.PlayFade();
@@ -1021,6 +1144,9 @@ public class PlayerController : MonoBehaviour
         tutorialText.text = line1 + '\n' + line2;
     }
 
+    /// <summary>
+    /// Displays the given message at the top of the screen.
+    /// </summary>
     public void ShowTutorialMessage(string message)
     {
         tutorialFadingBackground.PlayFade();

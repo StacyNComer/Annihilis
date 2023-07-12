@@ -1,7 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Sets a projectile's velocity when it enters play. 
+/// </summary>
+[RequireComponent(typeof(Rigidbody))]
 public class ProjectileMovement : MonoBehaviour
 {
     [SerializeField]
@@ -9,20 +11,11 @@ public class ProjectileMovement : MonoBehaviour
 
     private Rigidbody rb;
 
-    // Start is called before the first frame update
     void Start()
     {
         rb = gameObject.GetComponent<Rigidbody>();
 
+        //Start the projectile's movement.
         rb.velocity = transform.forward * speed;
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        /*var movement = transform.forward * speed * Time.deltaTime;
-        transform.position += movement;
-
-        rb.velocity = movement;*/
     }
 }

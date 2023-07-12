@@ -92,6 +92,10 @@ PrefabInstance:
       value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 7406274055989637445, guid: fd3ea829121e48f4ebdbed32f8b2fcdb, type: 3}
+      propertyPath: annihilatedAudio
+      value: 
+      objectReference: {fileID: 8300000, guid: 2197b7071791ba54b8c5bf606a1dfe6a, type: 3}
+    - target: {fileID: 7406274055989637445, guid: fd3ea829121e48f4ebdbed32f8b2fcdb, type: 3}
       propertyPath: baseLootTable.enemyHealthDropped
       value: 0
       objectReference: {fileID: 0}

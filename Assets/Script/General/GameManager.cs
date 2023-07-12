@@ -1,7 +1,8 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// A class meant to keep track of the state of the game and hold global variables.
+/// </summary>
 public class GameManager : MonoBehaviour
 {
     private static GameManager _gameManager;
@@ -20,6 +21,9 @@ public class GameManager : MonoBehaviour
         get => _player;
     }
 
+    /// <summary>
+    /// How many enemies each spawner will spawn.
+    /// </summary>
     public static float enemyMultiplier = 1;
 
     private void Awake()
@@ -32,12 +36,6 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         enemyMultiplier = 1;
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 
     public static int GetRaycastLayerMask()

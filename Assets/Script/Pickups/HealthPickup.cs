@@ -1,7 +1,8 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Gives the player health when touched by the player.
+/// </summary>
 public class HealthPickup : PickupBase
 {
     [SerializeField]
@@ -11,12 +12,16 @@ public class HealthPickup : PickupBase
 
     protected override void OnCollected(PlayerController collector)
     {
+        //Heal the player
         collector.HealPlayer(amountHealed, overheal);
-        collector.pickupMsgManager.AddPickupMessage($"+ {amountHealed} Health");
+
+        //Pickup message
+        collector.pickupMsgManager.AddPickupMessage("+ " + amountHealed + " " + (overheal? "Overheal" : "Health"));
     }
 
     protected override bool PickupCondition(PlayerController collector)
     {
-        return !overheal && collector.GetHitpoints() < 100;
+        //Prevent a player with full health from grabbing a health pickup.
+        return overheal || collector.GetHitpoints() < 100;
     }
 }

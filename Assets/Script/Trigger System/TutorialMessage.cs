@@ -1,9 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Text area's don't work in Unity Events. Neither do functions with more than one parameter... :(
+/// Showa a message at the top of the player's screen when triggered.
 /// </summary>
 public class TutorialMessage : TriggerableBehavior
 {
@@ -18,4 +16,6 @@ public class TutorialMessage : TriggerableBehavior
 
         onTriggered.AddListener(() => player.ShowTutorialMessage(message));
     }
+
+    //Text area's don't work in Unity Events. Neither do functions with more than one parameter... :(
 }
