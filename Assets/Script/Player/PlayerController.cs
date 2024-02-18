@@ -659,7 +659,7 @@ public class PlayerController : MonoBehaviour
 
         //Project the surface onto the x/z plane to get it's horizontal direction.
         var horDir = Vector3.ProjectOnPlane(surfaceNormal, Vector3.up).normalized;
-        //Swapping the x and z values rotates the vector 90 degrees about the y axis so that it faces the side instead of forward.
+        //Negating the z value and then swapping the x and z values rotates the vector 90 degrees about the y axis so that it faces the side instead of forward.
         slopeAxleAxis = new Vector3(-horDir.z, 0, horDir.x);
     }
 
