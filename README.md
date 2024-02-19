@@ -1,5 +1,5 @@
 # Welcome to Annihilis
-Annihilis is a Quake-style shooter made in the Unity engine. The custom made movement system, though simple, is heavily refined to feel fast, fluid, and satisfying, almost as if the player were gliding and bouncing through reality. The game's sounds and explosion particles come from various free sources. The rest of the game, including its programming (C#) and models, are done by me.
+Annihilis is a Quake-style shooter made in the Unity Engine. Designed and programmed (C#) by me as a solo project, the game features a custom made movement system that handles jumping, dashing, walking up slopes, and knockback from enemies and explosions. The movement is heavily refined to feel fast, fluid, and satisfying, almost as if the player were gliding through reality.
 
 This project's scripts can be found in the Assets/Script folder. If you would like to run the project for yourself, you can use version 2021.3.18 of the Unity Editor to open the project.
 
